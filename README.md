@@ -129,10 +129,6 @@ exit status 1
 Process finished with exit code 1
 ```
 
-## Interface Documentation
-
-
-
 ## Notes
 
 See interface documenation at [package jsoncfgo] (http://godoc.org/github.com/l3x/jsoncfgo)
