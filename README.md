@@ -135,7 +135,7 @@ Process finished with exit code 1
 
 ## Notes
 
-See interface documenation at [package jsoncfgo] (http://godoc.org/github.com/l3x/jsoncfgo))
+See interface documenation at [package jsoncfgo] (http://godoc.org/github.com/l3x/jsoncfgo)
 
 See companion article at [jsoncfgo - A JSON Config File Reader] (http://l3x.github.io/golang-code-examples/2014/07/25/jsoncfgo-config-file-reader-advanced.html)
 
