@@ -32,7 +32,7 @@ You can also call the __Validate__ function to validate attempts to read __non-e
 
 ## Usage
 
-### settings.json
+### simple-config.json
 ``` javascript
 {
    "host": "localhost",
