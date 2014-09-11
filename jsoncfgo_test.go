@@ -21,8 +21,10 @@ import (
 	"reflect"
 	"strings"
 	"testing"
+	u "github.com/go-goodies/go_utils"
 )
 
+// TESTS
 func TestIncludes(t *testing.T) {
 	obj, err := ReadFile("testdata/include1.json")
 	if err != nil {
@@ -102,3 +104,30 @@ func TestListExpansion(t *testing.T) {
 		t.Errorf("str = %q, want %q", s, "bar")
 	}
 }
+
+func TestUint(t *testing.T) {
+	obj, err := ReadFile("testdata/uint.json")
+	if err != nil {
+		t.Fatal(err)
+	}
+	myuint := obj.RequiredUint("myuint")
+	myuint2 := obj.RequiredUint("myuint2")
+	myint := obj.RequiredInt("myint")
+	mystring := obj.RequiredString("mystring")
+	if err := obj.Validate(); err != nil {
+		t.Error(err)
+	}
+	if !u.IsUint(myuint) {
+		t.Errorf("%v should have been of type uint", myuint)
+	}
+	if !u.IsUint(myuint2) {
+		t.Errorf("%v should have been of type uint", myuint2)
+	}
+	if u.IsUint(myint) {
+		t.Errorf("%v should not have been of type uint", myint)
+	}
+	if u.IsUint(mystring) {
+		t.Errorf("%v should not have been of type uint", mystring)
+	}
+}
+

@@ -15,12 +15,8 @@ limitations under the License.
 
 Changes made:
 * Changed package name from jsonconfig to jsoncfgo
-<<<<<<< HEAD
 * Added convenience functions:
 *  Bool, Int, Int64, IntList, List, Load, Object, String, requiredIntList
-=======
-* Added Load function
->>>>>>> add package and test files
 */
 
 // Package jsoncfgo defines a helper type for JSON objects to be
@@ -35,6 +31,8 @@ import (
 	"log"
 )
 
+// Load calls ReadFile to read json config data from the file specified by configPath
+// If an error occurs, it will log the error.
 func Load(configPath string) Obj {
 	conf, err := ReadFile(configPath)
 	if err != nil {
@@ -60,12 +58,11 @@ func (jc Obj) RequiredObject(key string) Obj {
 func (jc Obj) OptionalObject(key string) Obj {
 	return jc.obj(key, true)
 }
-<<<<<<< HEAD
+
+// Object is an OptionalObject
 func (jc Obj) Object(key string) Obj {
 	return jc.obj(key, true)
 }
-=======
->>>>>>> add package and test files
 
 func (jc Obj) obj(key string, optional bool) Obj {
 	jc.noteKnownKey(key)
@@ -92,7 +89,8 @@ func (jc Obj) RequiredString(key string) string {
 func (jc Obj) OptionalString(key, def string) string {
 	return jc.string(key, &def)
 }
-<<<<<<< HEAD
+
+// String is an OptionalString and accepts an optional string parameter
 func (jc Obj) String(key string, args ...interface{}) string {
 	def := ""
 	for _, arg := range args {
@@ -105,8 +103,6 @@ func (jc Obj) String(key string, args ...interface{}) string {
 	}
 	return jc.string(key, &def)
 }
-=======
->>>>>>> add package and test files
 
 func (jc Obj) string(key string, def *string) string {
 	jc.noteKnownKey(key)
@@ -133,12 +129,11 @@ func (jc Obj) RequiredStringOrObject(key string) interface{} {
 func (jc Obj) OptionalStringOrObject(key string) interface{} {
 	return jc.stringOrObject(key, false)
 }
-<<<<<<< HEAD
+
+// StringOrObject is an OptionalStringOrObject
 func (jc Obj) StringOrObject(key string) interface{} {
 	return jc.stringOrObject(key, false)
 }
-=======
->>>>>>> add package and test files
 
 func (jc Obj) stringOrObject(key string, required bool) interface{} {
 	jc.noteKnownKey(key)
@@ -167,7 +162,8 @@ func (jc Obj) RequiredBool(key string) bool {
 func (jc Obj) OptionalBool(key string, def bool) bool {
 	return jc.bool(key, &def)
 }
-<<<<<<< HEAD
+
+// Bool is an OptionalBool
 func (jc Obj) Bool(key string, args ...interface{}) bool {
 	def := false
 	for _, arg := range args {
@@ -180,8 +176,6 @@ func (jc Obj) Bool(key string, args ...interface{}) bool {
 	}
 	return jc.bool(key, &def)
 }
-=======
->>>>>>> add package and test files
 
 func (jc Obj) bool(key string, def *bool) bool {
 	jc.noteKnownKey(key)
@@ -215,7 +209,8 @@ func (jc Obj) RequiredInt(key string) int {
 func (jc Obj) OptionalInt(key string, def int) int {
 	return jc.int(key, &def)
 }
-<<<<<<< HEAD
+
+// Int is an OptionalInt
 func (jc Obj) Int(key string, args ...interface{}) int {
 	def := 0
 	for _, arg := range args {
@@ -228,8 +223,6 @@ func (jc Obj) Int(key string, args ...interface{}) int {
 	}
 	return jc.int(key, &def)
 }
-=======
->>>>>>> add package and test files
 
 func (jc Obj) int(key string, def *int) int {
 	jc.noteKnownKey(key)
@@ -249,6 +242,51 @@ func (jc Obj) int(key string, def *int) int {
 	return int(b)
 }
 
+
+func (jc Obj) RequiredUint(key string) uint {
+	return jc.uint(key, nil)
+}
+
+func (jc Obj) OptionalUint(key string, def uint) uint {
+	return jc.uint(key, &def)
+}
+
+// Uint is an Optional Uint
+func (jc Obj) Uint(key string, args ...interface{}) uint {
+	var def uint
+	for _, arg := range args {
+		switch t := arg.(type) {
+		case int:
+			def = uint(t)
+		case uint:
+			def = t
+		default:
+			panic(fmt.Sprintf("ERROR - Invalid argument (%v).  Must be an uint.", arg))
+		}
+	}
+	return jc.uint(key, &def)
+}
+
+func (jc Obj) uint(key string, def *uint) uint {
+	jc.noteKnownKey(key)
+	ei, ok := jc[key]
+	if !ok {
+		if def != nil {
+			return *def
+		}
+		jc.appendError(fmt.Errorf("Missing required config key %q (integer)", key))
+		return 0
+	}
+	b, ok := ei.(float64)
+	if !ok {
+		jc.appendError(fmt.Errorf("Expected config key %q to be a number", key))
+		return 0
+	}
+	return uint(b)
+}
+
+
+
 func (jc Obj) RequiredInt64(key string) int64 {
 	return jc.int64(key, nil)
 }
@@ -256,7 +294,8 @@ func (jc Obj) RequiredInt64(key string) int64 {
 func (jc Obj) OptionalInt64(key string, def int64) int64 {
 	return jc.int64(key, &def)
 }
-<<<<<<< HEAD
+
+// Int64 is an Optional Int64
 func (jc Obj) Int64(key string, args ...interface{}) int64 {
 	var def int64
 	for _, arg := range args {
@@ -271,8 +310,6 @@ func (jc Obj) Int64(key string, args ...interface{}) int64 {
 	}
 	return jc.int64(key, &def)
 }
-=======
->>>>>>> add package and test files
 
 func (jc Obj) int64(key string, def *int64) int64 {
 	jc.noteKnownKey(key)
@@ -292,10 +329,12 @@ func (jc Obj) int64(key string, def *int64) int64 {
 	return int64(b)
 }
 
+
 func (jc Obj) RequiredList(key string) []string {
 	return jc.requiredList(key, true)
 }
-<<<<<<< HEAD
+
+// List accepts and optional parameter of type []string
 func (jc Obj) List(key string, args ...interface{}) []string {
 	ret := jc.requiredList(key, true)
 	if ret == nil {
@@ -303,6 +342,8 @@ func (jc Obj) List(key string, args ...interface{}) []string {
 	}
 	return ret
 }
+
+// List accepts and optional parameter of type []int64
 func (jc Obj) IntList(key string, args ...interface{}) []int64 {
 	ret := jc.requiredIntList(key, true)
 	if ret == nil {
@@ -310,9 +351,7 @@ func (jc Obj) IntList(key string, args ...interface{}) []int64 {
 	}
 	return ret
 }
-=======
 
->>>>>>> add package and test files
 func (jc Obj) OptionalList(key string) []string {
 	return jc.requiredList(key, false)
 }
@@ -342,7 +381,7 @@ func (jc Obj) requiredList(key string, required bool) []string {
 	}
 	return sl
 }
-<<<<<<< HEAD
+
 func (jc Obj) requiredIntList(key string, required bool) []int64 {
 	jc.noteKnownKey(key)
 	ei, ok := jc[key]
@@ -359,17 +398,10 @@ func (jc Obj) requiredIntList(key string, required bool) []int64 {
 	}
 	sl := make([]int64, len(eil))
 	for i, ei := range eil {
-//		v, ok := ei.(int64)
-//		if !ok {
-//			jc.appendError(fmt.Errorf("Expected config key %q index %d to be an int64, not %T", key, i, ei))
-//			return nil
-//		}
 		sl[i] = int64(ei.(float64))
 	}
 	return sl
 }
-=======
->>>>>>> add package and test files
 
 func (jc Obj) noteKnownKey(key string) {
 	_, ok := jc["_knownkeys"]
