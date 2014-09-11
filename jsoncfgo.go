@@ -15,8 +15,12 @@ limitations under the License.
 
 Changes made:
 * Changed package name from jsonconfig to jsoncfgo
+<<<<<<< HEAD
 * Added convenience functions:
 *  Bool, Int, Int64, IntList, List, Load, Object, String, requiredIntList
+=======
+* Added Load function
+>>>>>>> add package and test files
 */
 
 // Package jsoncfgo defines a helper type for JSON objects to be
@@ -56,9 +60,12 @@ func (jc Obj) RequiredObject(key string) Obj {
 func (jc Obj) OptionalObject(key string) Obj {
 	return jc.obj(key, true)
 }
+<<<<<<< HEAD
 func (jc Obj) Object(key string) Obj {
 	return jc.obj(key, true)
 }
+=======
+>>>>>>> add package and test files
 
 func (jc Obj) obj(key string, optional bool) Obj {
 	jc.noteKnownKey(key)
@@ -85,6 +92,7 @@ func (jc Obj) RequiredString(key string) string {
 func (jc Obj) OptionalString(key, def string) string {
 	return jc.string(key, &def)
 }
+<<<<<<< HEAD
 func (jc Obj) String(key string, args ...interface{}) string {
 	def := ""
 	for _, arg := range args {
@@ -97,6 +105,8 @@ func (jc Obj) String(key string, args ...interface{}) string {
 	}
 	return jc.string(key, &def)
 }
+=======
+>>>>>>> add package and test files
 
 func (jc Obj) string(key string, def *string) string {
 	jc.noteKnownKey(key)
@@ -123,9 +133,12 @@ func (jc Obj) RequiredStringOrObject(key string) interface{} {
 func (jc Obj) OptionalStringOrObject(key string) interface{} {
 	return jc.stringOrObject(key, false)
 }
+<<<<<<< HEAD
 func (jc Obj) StringOrObject(key string) interface{} {
 	return jc.stringOrObject(key, false)
 }
+=======
+>>>>>>> add package and test files
 
 func (jc Obj) stringOrObject(key string, required bool) interface{} {
 	jc.noteKnownKey(key)
@@ -154,6 +167,7 @@ func (jc Obj) RequiredBool(key string) bool {
 func (jc Obj) OptionalBool(key string, def bool) bool {
 	return jc.bool(key, &def)
 }
+<<<<<<< HEAD
 func (jc Obj) Bool(key string, args ...interface{}) bool {
 	def := false
 	for _, arg := range args {
@@ -166,6 +180,8 @@ func (jc Obj) Bool(key string, args ...interface{}) bool {
 	}
 	return jc.bool(key, &def)
 }
+=======
+>>>>>>> add package and test files
 
 func (jc Obj) bool(key string, def *bool) bool {
 	jc.noteKnownKey(key)
@@ -199,6 +215,7 @@ func (jc Obj) RequiredInt(key string) int {
 func (jc Obj) OptionalInt(key string, def int) int {
 	return jc.int(key, &def)
 }
+<<<<<<< HEAD
 func (jc Obj) Int(key string, args ...interface{}) int {
 	def := 0
 	for _, arg := range args {
@@ -211,6 +228,8 @@ func (jc Obj) Int(key string, args ...interface{}) int {
 	}
 	return jc.int(key, &def)
 }
+=======
+>>>>>>> add package and test files
 
 func (jc Obj) int(key string, def *int) int {
 	jc.noteKnownKey(key)
@@ -237,6 +256,7 @@ func (jc Obj) RequiredInt64(key string) int64 {
 func (jc Obj) OptionalInt64(key string, def int64) int64 {
 	return jc.int64(key, &def)
 }
+<<<<<<< HEAD
 func (jc Obj) Int64(key string, args ...interface{}) int64 {
 	var def int64
 	for _, arg := range args {
@@ -251,6 +271,8 @@ func (jc Obj) Int64(key string, args ...interface{}) int64 {
 	}
 	return jc.int64(key, &def)
 }
+=======
+>>>>>>> add package and test files
 
 func (jc Obj) int64(key string, def *int64) int64 {
 	jc.noteKnownKey(key)
@@ -273,6 +295,7 @@ func (jc Obj) int64(key string, def *int64) int64 {
 func (jc Obj) RequiredList(key string) []string {
 	return jc.requiredList(key, true)
 }
+<<<<<<< HEAD
 func (jc Obj) List(key string, args ...interface{}) []string {
 	ret := jc.requiredList(key, true)
 	if ret == nil {
@@ -287,6 +310,9 @@ func (jc Obj) IntList(key string, args ...interface{}) []int64 {
 	}
 	return ret
 }
+=======
+
+>>>>>>> add package and test files
 func (jc Obj) OptionalList(key string) []string {
 	return jc.requiredList(key, false)
 }
@@ -316,6 +342,7 @@ func (jc Obj) requiredList(key string, required bool) []string {
 	}
 	return sl
 }
+<<<<<<< HEAD
 func (jc Obj) requiredIntList(key string, required bool) []int64 {
 	jc.noteKnownKey(key)
 	ei, ok := jc[key]
@@ -341,6 +368,8 @@ func (jc Obj) requiredIntList(key string, required bool) []int64 {
 	}
 	return sl
 }
+=======
+>>>>>>> add package and test files
 
 func (jc Obj) noteKnownKey(key string) {
 	_, ok := jc["_knownkeys"]
