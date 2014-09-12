@@ -1,3 +1,7 @@
+# DEPRECATION WARNING
+
+This repo was moved at 20140912-1451 to [go-goodies/go_jsoncfg] (https://github.com/go-goodies/go_jsoncfg)
+
 # jsoncfgo
 
 A Go library for reading configuration settings from JSON files.
