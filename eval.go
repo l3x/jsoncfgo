@@ -32,7 +32,7 @@ import (
 	"strconv"
 	"strings"
 
-	"camlistore.org/pkg/errorutil"
+	"go4.org/errorutil"
 	"camlistore.org/pkg/osutil"
 )
 
