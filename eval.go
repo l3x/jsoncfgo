@@ -20,20 +20,22 @@ Changes made:
 
 package jsoncfgo
 
-import (
-	"encoding/json"
-	"fmt"
-	"io"
-	"log"
-	"os"
-	"path/filepath"
-	"regexp"
-	"runtime"
-	"strconv"
-	"strings"
 
-	"go4.org/errorutil"
-	"camlistore.org/pkg/osutil"
+import (
+"encoding/json"
+"errors"
+"fmt"
+"io"
+"log"
+"os"
+"path/filepath"
+"regexp"
+"runtime"
+"strconv"
+"strings"
+
+"go4.org/errorutil"
+"go4.org/wkfs"
 )
 
 type stringVector struct {
@@ -69,11 +71,16 @@ type ConfigParser struct {
 
 	// Open optionally specifies an opener function.
 	Open func(filename string) (File, error)
+
+	// IncludeDirs optionally specifies where to find the other config files which are child
+	// objects of this config, if any. Even if nil, the working directory is always searched
+	// first.
+	IncludeDirs []string
 }
 
 func (c *ConfigParser) open(filename string) (File, error) {
 	if c.Open == nil {
-		return os.Open(filename)
+		return wkfs.Open(filename)
 	}
 	return c.Open(filename)
 }
@@ -81,27 +88,34 @@ func (c *ConfigParser) open(filename string) (File, error) {
 // Validates variable names for config _env expresssions
 var envPattern = regexp.MustCompile(`\$\{[A-Za-z0-9_]+\}`)
 
-func (c *ConfigParser) ReadFile(path string) (m map[string]interface{}, err error) {
+// ReadFile parses the provided path and returns the config file.
+// If path is empty, the c.Open function must be defined.
+func (c *ConfigParser) ReadFile(path string) (Obj, error) {
+	if path == "" && c.Open == nil {
+		return nil, errors.New("ReadFile of empty string but Open hook not defined")
+	}
 	c.touchedFiles = make(map[string]bool)
+	var err error
 	c.rootJSON, err = c.recursiveReadJSON(path)
 	return c.rootJSON, err
 }
 
 // Decodes and evaluates a json config file, watching for include cycles.
 func (c *ConfigParser) recursiveReadJSON(configPath string) (decodedObject map[string]interface{}, err error) {
+	if configPath != "" {
+		absConfigPath, err := filepath.Abs(configPath)
+		if err != nil {
+			return nil, fmt.Errorf("Failed to expand absolute path for %s", configPath)
+		}
+		if c.touchedFiles[absConfigPath] {
+			return nil, fmt.Errorf("ConfigParser include cycle detected reading config: %v",
+				absConfigPath)
+		}
+		c.touchedFiles[absConfigPath] = true
 
-	absConfigPath, err := filepath.Abs(configPath)
-	if err != nil {
-		return nil, fmt.Errorf("Failed to expand absolute path for %s", configPath)
+		c.includeStack.Push(absConfigPath)
+		defer c.includeStack.Pop()
 	}
-	if c.touchedFiles[absConfigPath] {
-		return nil, fmt.Errorf("ConfigParser include cycle detected reading config: %v",
-			absConfigPath)
-	}
-	c.touchedFiles[absConfigPath] = true
-
-	c.includeStack.Push(absConfigPath)
-	defer c.includeStack.Pop()
 
 	var f File
 	if f, err = c.open(configPath); err != nil {
@@ -133,16 +147,32 @@ func (c *ConfigParser) recursiveReadJSON(configPath string) (decodedObject map[s
 	return decodedObject, nil
 }
 
+var regFunc = map[string]expanderFunc{}
+
+// RegisterFunc registers a new function that may be called from JSON
+// configs using an array of the form ["_name", arg0, argN...].
+// The provided name must begin with an underscore.
+func RegisterFunc(name string, fn func(c *ConfigParser, v []interface{}) (interface{}, error)) {
+	if len(name) < 2 || !strings.HasPrefix(name, "_") {
+		panic("illegal name")
+	}
+	if _, dup := regFunc[name]; dup {
+		panic("duplicate registration of " + name)
+	}
+	regFunc[name] = fn
+}
+
 type expanderFunc func(c *ConfigParser, v []interface{}) (interface{}, error)
 
-func namedExpander(name string) (expanderFunc, bool) {
+func namedExpander(name string) (fn expanderFunc, ok bool) {
 	switch name {
 	case "_env":
-		return expanderFunc((*ConfigParser).expandEnv), true
+		return (*ConfigParser).expandEnv, true
 	case "_fileobj":
-		return expanderFunc((*ConfigParser).expandFile), true
+		return (*ConfigParser).expandFile, true
 	}
-	return nil, false
+	fn, ok = regFunc[name]
+	return
 }
 
 func (c *ConfigParser) evalValue(v interface{}) (interface{}, error) {
@@ -181,11 +211,7 @@ func (c *ConfigParser) evaluateExpressions(m map[string]interface{}, seenKeys []
 	for k, ei := range m {
 		thisPath := append(seenKeys, k)
 		switch subval := ei.(type) {
-		case string:
-			continue
-		case bool:
-			continue
-		case float64:
+		case string, bool, float64, nil:
 			continue
 		case []interface{}:
 			if len(subval) == 0 {
@@ -265,7 +291,7 @@ func (c *ConfigParser) expandFile(v []interface{}) (exp interface{}, err error) 
 		return "", fmt.Errorf("_file expansion expected 1 arg, got %d", len(v))
 	}
 	var incPath string
-	if incPath, err = osutil.FindCamliInclude(v[0].(string)); err != nil {
+	if incPath, err = c.ConfigFilePath(v[0].(string)); err != nil {
 		return "", fmt.Errorf("Included config does not exist: %v", v[0])
 	}
 	if exp, err = c.recursiveReadJSON(incPath); err != nil {
@@ -273,4 +299,28 @@ func (c *ConfigParser) expandFile(v []interface{}) (exp interface{}, err error) 
 			c.includeStack.Last(), err)
 	}
 	return exp, nil
+}
+
+// ConfigFilePath checks if configFile is found and returns a usable path to it.
+// It first checks if configFile is an absolute path, or if it's found in the
+// current working directory. If not, it then checks if configFile is in one of
+// c.IncludeDirs. It returns an error if configFile is absolute and could not be
+// statted, or os.ErrNotExist if configFile was not found.
+func (c *ConfigParser) ConfigFilePath(configFile string) (path string, err error) {
+	// Try to open as absolute / relative to CWD
+	_, err = os.Stat(configFile)
+	if err != nil && filepath.IsAbs(configFile) {
+		return "", err
+	}
+	if err == nil {
+		return configFile, nil
+	}
+
+	for _, d := range c.IncludeDirs {
+		if _, err := os.Stat(filepath.Join(d, configFile)); err == nil {
+			return filepath.Join(d, configFile), nil
+		}
+	}
+
+	return "", os.ErrNotExist
 }
